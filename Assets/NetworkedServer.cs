@@ -14,7 +14,7 @@ public class NetworkedServer : MonoBehaviour
     int unreliableChannelID;
     int hostID;
     int socketPort = 5491;
-    
+    LinkedList<PlayerAccount> playerAccounts;
     // Start is called before the first frame update
     void Start()
     {
@@ -24,7 +24,9 @@ public class NetworkedServer : MonoBehaviour
         unreliableChannelID = config.AddChannel(QosType.Unreliable);
         HostTopology topology = new HostTopology(config, maxConnections);
         hostID = NetworkTransport.AddHost(topology, socketPort, null);
-        
+        playerAccounts = new LinkedList<PlayerAccount>();
+        //read in player accounts
+        LoadPlayerManagementFile();
     }
 
     // Update is called once per frame
@@ -87,8 +89,66 @@ public class NetworkedServer : MonoBehaviour
         bool validUser = false;
         try
         {
-            
-            
+            if (signifier == ClientToServerSignifiers.CreateAccount)
+            {
+                Debug.Log("create account");
+                //chk if player already exists
+                foreach (PlayerAccount pa in playerAccounts)
+                {
+                    if (pa.name == n)
+                    {
+                        nameIsInUse = true;
+                        break;
+                    }
+                }
+                if (nameIsInUse)
+                {
+                    AppendLogFile(n + ":Account creation failed from connection " + id);
+                    SendMessageToClient(ServerToClientSignifiers.AccountCreationFailed + "," + n, id);
+                    // + "," + System.DateTime.Now.ToString("HH:mm:ss MM/dd/yyyy"));
+                }
+                else
+                {
+                    ///if not create new, add to list
+                    PlayerAccount playerAccount = new PlayerAccount(id, n, p);
+                    playerAccounts.AddLast(playerAccount);
+                    //send to client suc or fail
+                    Debug.Log("create success");
+                    AppendLogFile(n + ":Account creation succeed from connection " + id);
+                    SendMessageToClient(ServerToClientSignifiers.AccountCreationComplete + "," + n, id);
+                    // save list to hd
+                    SavePlayerManagementFile();
+                }
+
+
+            }
+            else if (signifier == ClientToServerSignifiers.Login)
+            {
+                Debug.Log("login");
+
+                //chk if player is already exists,
+                foreach (PlayerAccount pa in playerAccounts)
+                {
+                    if (pa.name == n && pa.password == p)
+                    {
+                        validUser = true;
+                        Debug.Log("login success");
+                        break;
+                    }
+                }
+                //send to client suc or fail
+                if (validUser)
+                {
+                    AppendLogFile(n + ":Login succeed from connection " + id);
+                    SendMessageToClient(ServerToClientSignifiers.LoginComplete + "," + n, id);
+                }
+                else
+                {
+                    AppendLogFile(n + ":Login failed from connection " + id);
+                    SendMessageToClient(ServerToClientSignifiers.LoginFailed + "," + n, id);
+                }
+            }
+
         }
         catch (Exception ex)
         {
@@ -97,7 +157,58 @@ public class NetworkedServer : MonoBehaviour
 
     }
 
-   
+    public void SavePlayerManagementFile()
+    {
+        StreamWriter sw = new StreamWriter(Application.dataPath + Path.DirectorySeparatorChar + "PlayerManagementFile.txt");
+        foreach (PlayerAccount pa in playerAccounts)
+        {
+            sw.WriteLine(PlayerAccount.PlayerIdSinifier + "," + pa.id + "," + pa.name + "," + pa.password);
+        }
+        sw.Close();
+    }
+
+    public void LoadPlayerManagementFile()
+    {
+        if (File.Exists(Application.dataPath + Path.DirectorySeparatorChar + "PlayerManagementFile.txt"))
+        {
+            StreamReader sr = new StreamReader(Application.dataPath + Path.DirectorySeparatorChar + "PlayerManagementFile.txt");
+            string line;
+            while ((line = sr.ReadLine()) != null)
+            {
+                string[] csv = line.Split(',');
+
+                int signifier = int.Parse(csv[0]);
+                if (signifier == PlayerAccount.PlayerIdSinifier)
+                {
+                    playerAccounts.AddLast(new PlayerAccount(int.Parse(csv[1]), csv[2], csv[3]));
+                }
+            }
+        }
+    }
+    public void AppendLogFile(string line)
+    {
+        StreamWriter sw = new StreamWriter(Application.dataPath + Path.DirectorySeparatorChar + "Log.txt", true);
+
+        sw.WriteLine(System.DateTime.Now.ToString("yyyyMMdd HHmmss") + ": " + line);
+
+        sw.Close();
+    }
+
+
+}
+
+public class PlayerAccount
+{
+    public const int PlayerIdSinifier = 1;
+    public string name, password;
+    public int id;
+    public PlayerAccount(int i, string n, string p)
+    {
+        id = i;
+        name = n;
+        password = p;
+    }
+
 }
 public static class ClientToServerSignifiers
 {
