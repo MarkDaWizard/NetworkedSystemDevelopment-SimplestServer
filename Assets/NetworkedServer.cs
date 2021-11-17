@@ -1,3 +1,5 @@
+//SERVER
+
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -32,6 +34,7 @@ public class NetworkedServer : MonoBehaviour
         playerAccounts = new LinkedList<PlayerAccount>();
         //read in player accounts
         LoadPlayerManagementFile();
+        gameRooms = new LinkedList<GameRoom>();
     }
 
     // Update is called once per frame
@@ -55,7 +58,7 @@ public class NetworkedServer : MonoBehaviour
                 break;
             case NetworkEventType.ConnectEvent:
                 Debug.Log("Connection, " + recConnectionID);
-                //a
+                AppendLogFile("Start connection " + recConnectionID);
                 break;
             case NetworkEventType.DataEvent:
                 string msg = Encoding.Unicode.GetString(recBuffer, 0, dataSize);
@@ -63,7 +66,7 @@ public class NetworkedServer : MonoBehaviour
                 break;
             case NetworkEventType.DisconnectEvent:
                 Debug.Log("Disconnection, " + recConnectionID);
-                //a
+                AppendLogFile("Disconnection " + recConnectionID);
                 break;
         }
 
@@ -213,7 +216,100 @@ public class NetworkedServer : MonoBehaviour
                     playerWaitingIDN2 = "";
                 }
             }
+            else if (signifier == ClientToServerSignifiers.PlayGame)
+            {
+                GameRoom gr = GetGameRoomClientId(id);
+                if (gr != null)
+                {
+                    //if (gr.PlayerList[0].id == id)
+                    //    SendMessageToClient(ServerToClientSignifiers.OpponentPlay + "," + gr.PlayerList[1].name, id);
+                    //else SendMessageToClient(ServerToClientSignifiers.OpponentPlay + "," + gr.PlayerList[0].name, id);
+                }
+            }
+            else if (signifier == ClientToServerSignifiers.SendMsg)
+            {
+                Debug.Log("send from s: " + msg);
+                GameRoom gr = GetGameRoomClientId(id);
+                if (gr != null)
+                {
+                    //foreach (PlayerAccount pa in gr.PlayerList)
+                    //{
+                    //    SendMessageToClient(ServerToClientSignifiers.ReceiveMsg + "," + csv[1], pa.id);
+                    //}
+                    AppendLogFile(csv[2] + ":" + csv[1] + " from connection " + id);
+                    SendMessageToClient(ServerToClientSignifiers.ReceiveMsg + "," + id + "," + csv[1] + "," + csv[2], gr.Player1.id);
+                    SendMessageToClient(ServerToClientSignifiers.ReceiveMsg + "," + id + "," + csv[1] + "," + csv[2], gr.Player2.id);
+                    SendMessageToClient(ServerToClientSignifiers.ReceiveMsg + "," + id + "," + csv[1] + "," + csv[2], gr.Player3.id);
+                    foreach (PlayerAccount ob in gr.ObserverList)
+                    {
+                        SendMessageToClient(ServerToClientSignifiers.ReceiveMsg + "," + id + "," + csv[1] + "," + csv[2], ob.id);
+                    }
+                }
+            }
+            else if (signifier == ClientToServerSignifiers.SendPrefixMsg)
+            {
+                Debug.Log("send pr from s: " + msg);
+                GameRoom gr = GetGameRoomClientId(id);
+                if (gr != null)
+                {
+                    //foreach (PlayerAccount pa in gr.PlayerList)
+                    //{
+                    AppendLogFile(csv[2] + ":" + csv[1] + " from connection " + id);
+                    SendMessageToClient(ServerToClientSignifiers.ReceiveMsg + "," + id + "," + csv[1] + "," + csv[2], gr.Player1.id);
+                    SendMessageToClient(ServerToClientSignifiers.ReceiveMsg + "," + id + "," + csv[1] + "," + csv[2], gr.Player2.id);
+                    SendMessageToClient(ServerToClientSignifiers.ReceiveMsg + "," + id + "," + csv[1] + "," + csv[2], gr.Player3.id);
+                    //}
+                    foreach (PlayerAccount ob in gr.ObserverList)
+                    {
+                        SendMessageToClient(ServerToClientSignifiers.ReceiveMsg + "," + id + "," + csv[1] + "," + csv[2], ob.id);
+                    }
 
+                }
+            }
+            else if (signifier == ClientToServerSignifiers.SendClientMsg)
+            {
+                Debug.Log("send pr from c: " + msg);
+
+                Debug.Log("p: " + csv[1].Substring(0, csv[1].IndexOf(':')));
+
+                int recId = int.Parse(csv[1].Substring(0, csv[1].IndexOf(':')));
+                Debug.Log("rid " + recId);
+                if (csv.Length > 3)
+                {
+                    AppendLogFile(csv[3] + ":" + csv[2] + " to connection " + recId);
+                    SendMessageToClient(ServerToClientSignifiers.ReceiveCMsg + "," + id + "," + csv[2] + "," + csv[3], recId);
+                    SendMessageToClient(ServerToClientSignifiers.ReceiveCMsg + "," + id + "," + csv[2] + "," + csv[3], id);
+                }
+
+            }
+            else if (signifier == ClientToServerSignifiers.JoinAsObserver)
+            {
+                Debug.Log("join as observer" + gameRooms.Count);
+                foreach (GameRoom gr in gameRooms)
+                {
+                    gr.addObserver(id, csv[1]);
+                    //foreach (PlayerAccount pa in gr.PlayerList)
+                    //{
+                    AppendLogFile(csv[1] + ":join as observer from connection " + id);
+                    SendMessageToClient(ServerToClientSignifiers.someoneJoinedAsObserver + "," + id + "," + csv[1], gr.Player1.id);
+                    SendMessageToClient(ServerToClientSignifiers.someoneJoinedAsObserver + "," + id + "," + csv[1], gr.Player2.id);
+                    SendMessageToClient(ServerToClientSignifiers.someoneJoinedAsObserver + "," + id + "," + csv[1], gr.Player3.id);
+                    //}
+
+
+                }
+
+            }
+            else if (signifier == ClientToServerSignifiers.ReplayMsg)
+            {
+                Debug.Log("replay req");
+                string[] contain = ReadLogFile();
+                foreach (var line in contain)
+                {
+                    SendMessageToClient(ServerToClientSignifiers.ReplayMsg + "," + line, id);
+                }
+
+            }
         }
         catch (Exception ex)
         {
@@ -292,10 +388,34 @@ public class NetworkedServer : MonoBehaviour
         }
         return null;
     }
-
-
 }
-
+public static class ClientToServerSignifiers
+{
+    public const int CreateAccount = 1;
+    public const int Login = 2;
+    public const int JoinGammeRoomQueue = 3;
+    public const int PlayGame = 4;
+    public const int SendMsg = 5;
+    public const int SendPrefixMsg = 6;
+    public const int JoinAsObserver = 7;
+    public const int SendClientMsg = 8;
+    public const int ReplayMsg = 9;
+}
+public static class ServerToClientSignifiers
+{
+    public const int LoginComplete = 1;
+    public const int LoginFailed = 2;
+    public const int AccountCreationComplete = 3;
+    public const int AccountCreationFailed = 4;
+    public const int OpponentPlay = 5;
+    public const int GameStart = 6;
+    public const int ReceiveMsg = 7;
+    public const int someoneJoinedAsObserver = 8;
+    public const int ListOfPlayer = 8;
+    public const int JoinedPlay = 9;
+    public const int ReceiveCMsg = 10;
+    public const int ReplayMsg = 11;
+}
 public class PlayerAccount
 {
     public const int PlayerIdSinifier = 1;
@@ -309,7 +429,6 @@ public class PlayerAccount
     }
 
 }
-
 public class GameRoom
 {
     //public int playerId1, playerId2, playerID3;
@@ -348,31 +467,4 @@ public class GameRoom
         //}
         return p;
     }
-}
-public static class ClientToServerSignifiers
-{
-    public const int CreateAccount = 1;
-    public const int Login = 2;
-    public const int JoinGammeRoomQueue = 3;
-    public const int PlayGame = 4;
-    public const int SendMsg = 5;
-    public const int SendPrefixMsg = 6;
-    public const int JoinAsObserver = 7;
-    public const int SendClientMsg = 8;
-    public const int ReplayMsg = 9;
-}
-public static class ServerToClientSignifiers
-{
-    public const int LoginComplete = 1;
-    public const int LoginFailed = 2;
-    public const int AccountCreationComplete = 3;
-    public const int AccountCreationFailed = 4;
-    public const int OpponentPlay = 5;
-    public const int GameStart = 6;
-    public const int ReceiveMsg = 7;
-    public const int someoneJoinedAsObserver = 8;
-    public const int ListOfPlayer = 8;
-    public const int JoinedPlay=9;
-    public const int ReceiveCMsg = 10;
-    public const int ReplayMsg = 11;
 }
