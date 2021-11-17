@@ -255,3 +255,64 @@ Disconnection 1
 20211120 114926: user3:test to connection 3
 20211120 135533: Start connection 1
 20211120 135547: 1:Account creation succeed from connection 1
+20211120 152850: Start connection 1
+20211120 152909: Disconnection 1
+20211120 152956: Start connection 1
+20211120 153001: o:Account creation succeed from connection 1
+20211120 153012: o:player join in game room from connection 1
+20211120 153019: Disconnection 1
+20211120 153138: Start connection 1
+20211120 153141: p:Account creation succeed from connection 1
+20211120 153145: p:player join in game room from connection 1
+20211120 153235: Disconnection 1
+20211120 153402: Start connection 1
+20211120 153404: u:Account creation succeed from connection 1
+20211120 153409: u:player join in game room from connection 1
+20211120 153501: Disconnection 1
+20211120 153503: Start connection 1
+20211120 153506: q:Login failed from connection 1
+20211120 153508: q:Account creation succeed from connection 1
+20211120 153511: q:player join in game room from connection 1
+20211120 153523: Disconnection 1
+20211120 154029: Start connection 1
+20211120 154035: Start connection 2
+20211120 154042: 2:Account creation succeed from connection 2
+20211120 154043: 1:Account creation failed from connection 1
+20211120 154045: 1:Account creation failed from connection 1
+20211120 154047: 1:Account creation failed from connection 1
+20211120 154050: 1:Account creation failed from connection 1
+20211120 154052: 1:Account creation failed from connection 1
+20211120 154056: 3:Account creation succeed from connection 1
+20211120 154103: 3:player join in game room from connection 1
+20211120 154103: start game with players(connection_id:name) ,1:u,1:q,1:3
+20211120 154103: 2:player join in game room from connection 2
+20211120 154125: 3:yo to connection 1
+20211120 154129: 3:yo to connection 1
+20211120 154138: 3:test from connection 1
+20211120 154140: 3:test from connection 1
+20211120 154147: Disconnection 1
+20211120 154219: Start connection 1
+20211120 154221: Start connection 2
+20211120 154225: p1:Account creation succeed from connection 1
+20211120 154228: p2:Account creation succeed from connection 2
+20211120 154231: p1:player join in game room from connection 1
+20211120 154232: p2:player join in game room from connection 2
+20211120 154318: Disconnection 1
+20211120 154503: Start connection 1
+20211120 154506: Start connection 2
+20211120 154508: Start connection 3
+20211120 154511: p1:Account creation failed from connection 1
+20211120 154512: p1:Account creation failed from connection 1
+20211120 154516: b1:Account creation succeed from connection 1
+20211120 154519: b2:Account creation succeed from connection 2
+20211120 154521: b3:Account creation succeed from connection 3
+20211120 154527: b2:player join in game room from connection 2
+20211120 154528: b1:player join in game room from connection 1
+20211120 154529: b3:player join in game room from connection 3
+20211120 154529: start game with players(connection_id:name) ,2:b2,1:b1,3:b3
+20211120 154555: b2:hi to connection 1
+20211120 154604: b3:sup to connection 1
+20211120 154614: b2:hello from connection 2
+20211120 154620: b2:boooo from connection 2
+20211120 154624: Disconnection 2
+20211120 154625: Disconnection 3
