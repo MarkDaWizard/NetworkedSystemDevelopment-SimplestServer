@@ -15,6 +15,11 @@ public class NetworkedServer : MonoBehaviour
     int hostID;
     int socketPort = 5491;
     LinkedList<PlayerAccount> playerAccounts;
+    int playerWaitingID = -1;
+    int playerWaitingID2 = -1;
+    string playerWaitingIDN = "";
+    string playerWaitingIDN2 = "";
+    LinkedList<GameRoom> gameRooms;
     // Start is called before the first frame update
     void Start()
     {
@@ -148,6 +153,66 @@ public class NetworkedServer : MonoBehaviour
                     SendMessageToClient(ServerToClientSignifiers.LoginFailed + "," + n, id);
                 }
             }
+            else if (signifier == ClientToServerSignifiers.JoinGammeRoomQueue)
+            {
+                if (playerWaitingID == -1)
+                {
+                    playerWaitingID = id;
+                    if (csv.Length > 1)
+                    {
+                        playerWaitingIDN = csv[1];
+                        AppendLogFile(csv[1] + ":player join in game room from connection " + id);
+                        SendMessageToClient(ServerToClientSignifiers.JoinedPlay + "," + id + "," + csv[1], id);
+                    }
+                    else
+                    {
+                        AppendLogFile("player join in game room from connection " + id);
+                        SendMessageToClient(ServerToClientSignifiers.JoinedPlay + "," + id, id);
+                    }
+                }
+                else if (playerWaitingID2 == -1)
+                {
+                    playerWaitingID2 = id;
+                    if (csv.Length > 1)
+                    {
+                        playerWaitingIDN2 = csv[1];
+                        AppendLogFile(csv[1] + ":player join in game room from connection " + id);
+                        SendMessageToClient(ServerToClientSignifiers.JoinedPlay + "," + id + "," + csv[1], id);
+                        SendMessageToClient(ServerToClientSignifiers.JoinedPlay + "," + id + "," + csv[1], playerWaitingID);
+                    }
+                    else
+                    {
+                        AppendLogFile("player join in game room from connection " + id);
+                        SendMessageToClient(ServerToClientSignifiers.JoinedPlay + "," + id, id);
+                        SendMessageToClient(ServerToClientSignifiers.JoinedPlay + "," + id, playerWaitingID);
+                    }
+                }
+
+                else
+                {
+                    GameRoom gr = new GameRoom();
+                    gr.Player1 = new PlayerAccount(playerWaitingID, playerWaitingIDN, "");
+                    gr.Player2 = new PlayerAccount(playerWaitingID2, playerWaitingIDN2, "");
+                    gr.Player3 = new PlayerAccount(id, csv[1], "");
+                    gameRooms.AddLast(gr);
+                    //foreach (PlayerAccount pa in gr.PlayerList)
+                    //{
+                    AppendLogFile(csv[1] + ":player join in game room from connection " + id);
+                    AppendLogFile("start game with players(connection_id:name) " + gr.getPlayers());
+                    SendMessageToClient(ServerToClientSignifiers.JoinedPlay + "," + id + "," + csv[1], id);
+                    SendMessageToClient(ServerToClientSignifiers.JoinedPlay + "," + id + "," + csv[1], playerWaitingID);
+                    SendMessageToClient(ServerToClientSignifiers.JoinedPlay + "," + id + "," + csv[1], playerWaitingID2);
+                    SendMessageToClient(ServerToClientSignifiers.GameStart + gr.getPlayers(), gr.Player1.id);
+                    SendMessageToClient(ServerToClientSignifiers.GameStart + gr.getPlayers(), gr.Player2.id);
+                    SendMessageToClient(ServerToClientSignifiers.GameStart + gr.getPlayers(), gr.Player3.id);
+                    //}
+
+                    playerWaitingID = -1;
+                    playerWaitingID2 = -1;
+                    playerWaitingIDN = "";
+                    playerWaitingIDN2 = "";
+                }
+            }
 
         }
         catch (Exception ex)
@@ -194,6 +259,40 @@ public class NetworkedServer : MonoBehaviour
         sw.Close();
     }
 
+    public string[] ReadLogFile()
+    {
+        string[] contain = null;
+        if (File.Exists(Application.dataPath + Path.DirectorySeparatorChar + "Log.txt"))
+        {
+            contain = File.ReadAllLines(Application.dataPath + Path.DirectorySeparatorChar + "Log.txt");
+            //StreamReader sr = new StreamReader(Application.dataPath + Path.DirectorySeparatorChar + "Log.txt");
+            //string line;
+            //while ((line = sr.ReadLine()) != null)
+            //{
+            //    string[] csv = line.Split(',');
+
+            //    int signifier = int.Parse(csv[0]);
+
+            //}
+        }
+        return contain;
+    }
+    public GameRoom GetGameRoomClientId(int playerId)
+    {
+        foreach (GameRoom gr in gameRooms)
+        {
+            //foreach (PlayerAccount pa in gr.PlayerList)
+            //{
+            if (gr.Player1.id == playerId || gr.Player2.id == playerId || gr.Player3.id == playerId)
+            {
+                return gr;
+            }
+            //}
+
+        }
+        return null;
+    }
+
 
 }
 
@@ -209,6 +308,46 @@ public class PlayerAccount
         password = p;
     }
 
+}
+
+public class GameRoom
+{
+    //public int playerId1, playerId2, playerID3;
+    //public string playerIdN, playerId2N, playerID3N;
+    public List<PlayerAccount> ObserverList;
+    public PlayerAccount Player1, Player2, Player3;
+    //int P1,string n1,int P2,string n2,int P3, string n3
+    public GameRoom()
+    {
+        //playerId1 = P1;
+        //playerIdN = n1;
+        //playerId2 = P2;
+        //playerId2N = n2;
+        //playerID3N = n3;
+        //playerID3 = P3;
+        //PlayerList = new List<PlayerAccount>();
+        ObserverList = new List<PlayerAccount>();
+    }
+    //public void addPlayer(int id, string n)
+    //{
+    //    PlayerList.Add(new PlayerAccount(id, n, ""));
+    //}
+    public void addObserver(int id, string n)
+    {
+        if (!ObserverList.Contains(new PlayerAccount(id, n, "")))
+            ObserverList.Add(new PlayerAccount(id, n, ""));
+    }
+    public string getPlayers()
+    {
+        string p = "";
+        //foreach (PlayerAccount item in PlayerList)
+        //{
+        p += "," + Player1.id + ":" + Player1.name;
+        p += "," + Player2.id + ":" + Player2.name;
+        p += "," + Player3.id + ":" + Player3.name;
+        //}
+        return p;
+    }
 }
 public static class ClientToServerSignifiers
 {
