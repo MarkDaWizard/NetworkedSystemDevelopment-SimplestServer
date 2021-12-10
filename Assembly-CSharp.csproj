@@ -9,7 +9,7 @@
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <RootNamespace></RootNamespace>
-    <ProjectGuid>{22BB1685-B27C-AC8B-2981-081AD68CD037}</ProjectGuid>
+    <ProjectGuid>{4967DB4D-CEB2-E012-E856-2A74A7AFE211}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>Assembly-CSharp</AssemblyName>
@@ -59,7 +59,7 @@
     <Compile Include="Assets\NetworkedServer.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\playerAccountData.txt" />
+    <None Include="Assets\playersdata.txt" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

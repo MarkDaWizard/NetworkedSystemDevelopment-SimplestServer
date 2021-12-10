@@ -32,7 +32,7 @@ public class NetworkedServer : MonoBehaviour
         hostID = NetworkTransport.AddHost(topology, socketPort, null);
 
         playerAccounts = new List<PlayerAccount>();
-        saveDataPath = Application.dataPath + Path.DirectorySeparatorChar + "playerAccountData.txt";
+        saveDataPath = Application.dataPath + Path.DirectorySeparatorChar + "playersdata.txt";
         LoadAccountData();
 
         gameRooms = new LinkedList<GameRoom>();
@@ -74,7 +74,7 @@ public class NetworkedServer : MonoBehaviour
                     if (gr != null)
                     {
                         if ((gr.playerId1 == recConnectionID || gr.playerId2 == recConnectionID) && gr.gameHasEnded == false)
-                            ProcessRecievedMsg(ClientToServerSignifiers.EndingTheGame + "," + "Other player left early", recConnectionID);
+                            ProcessRecievedMsg(ClientToServerSignifiers.EndingTheGame + "," + "Opponent disconnected", recConnectionID);
                         RemoveClientFromGameRoom(gr, recConnectionID);
                     }
                 }
@@ -106,12 +106,12 @@ public class NetworkedServer : MonoBehaviour
 
             if(nameIsInUse)
             {
-                SendMessageToClient(ServerToClientSignifiers.AccountCreationFailed + ", name already in use", id);
+                SendMessageToClient(ServerToClientSignifiers.AccountCreationFailed + ", name taken", id);
             }
             else
             {
                 SaveNewUser(new PlayerAccount(n, p));
-                SendMessageToClient(ServerToClientSignifiers.AccountCreated + ",Account created", id);
+                SendMessageToClient(ServerToClientSignifiers.AccountCreated + ", Account created successfully!", id);
             }
         }
         else if(signifier == ClientToServerSignifiers.Login)
@@ -122,17 +122,17 @@ public class NetworkedServer : MonoBehaviour
             searchAccountsByName(n, out accountToCheck);
 
             if(accountToCheck == null)
-                SendMessageToClient(ServerToClientSignifiers.LoginFailed + "," + "could not find user", id);
+                SendMessageToClient(ServerToClientSignifiers.LoginFailed + "," + " user not found", id);
             else if(p == accountToCheck.password)
                 //login
-                SendMessageToClient(ServerToClientSignifiers.LoginComplete+ "," + "Logging in", id);
+                SendMessageToClient(ServerToClientSignifiers.LoginComplete+ "," + " Logging in", id);
             else //incorrect password
-                 SendMessageToClient(ServerToClientSignifiers.LoginFailed + "," + "incorrect password", id);
+                 SendMessageToClient(ServerToClientSignifiers.LoginFailed + "," + " password incorrect!", id);
 
         }
         else if(signifier == ClientToServerSignifiers.JoinGameRoomQueue)
         {
-            Debug.Log("client is waiting to join game");
+            Debug.Log("Client is waiting to join game");
             if(playerWaitingForMatchWithId == -1)
             { 
                 playerWaitingForMatchWithId = id;
@@ -163,21 +163,21 @@ public class NetworkedServer : MonoBehaviour
         {
             string newMsg = ServerToClientSignifiers.OpponentChoseASquare + "," + csv[1];
             GameRoom gr = GetGameRoomFromClientID(id);
-            SendMessegeToRestOfRoom(gr, id, newMsg);
+            SendMessageToRestOfRoom(gr, id, newMsg);
             gr.savedSquareChoices.Add(csv[1]);
         }
         else if(signifier == ClientToServerSignifiers.EndingTheGame)
         {
             string newMsg = ServerToClientSignifiers.GameIsOver + "," + csv[1];
             GameRoom gr = GetGameRoomFromClientID(id);
-            SendMessegeToRestOfRoom(gr, id, newMsg);
+            SendMessageToRestOfRoom(gr, id, newMsg);
             gr.gameHasEnded = true;
         }
         else if(signifier == ClientToServerSignifiers.ChatLogMessage)
         {
             string newMsg = ServerToClientSignifiers.ChatLogMessage + ","  + csv[1];
             GameRoom gr = GetGameRoomFromClientIDIncludeObservers(id);
-            SendMessegeToRestOfRoom(gr, id, newMsg);
+            SendMessageToRestOfRoom(gr, id, newMsg);
         }
         else if(signifier == ClientToServerSignifiers.JoinAnyRoomAsObserver)
         {
@@ -221,12 +221,6 @@ public class NetworkedServer : MonoBehaviour
 
     }
 
-
-
-    /// Helper Functions
-    /// 
-  
-   //login/username functions
 
     private bool searchAccountsByName(string name, out PlayerAccount account)
     {
@@ -313,7 +307,7 @@ public class NetworkedServer : MonoBehaviour
 
 
 
-    void SendMessegeToRestOfRoom(GameRoom gr, int fromID, string msg)
+    void SendMessageToRestOfRoom(GameRoom gr, int fromID, string msg)
     {
         foreach(int id in gr.observerIds)
         {
