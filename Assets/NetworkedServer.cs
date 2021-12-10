@@ -75,7 +75,7 @@ public class NetworkedServer : MonoBehaviour
                     {
                         //Check if a player disconnected
                         if ((gameRoom.playerID1 == recConnectionID || gameRoom.playerID2 == recConnectionID) && gameRoom.gameHasEnded == false)
-                            ProcessRecievedMsg(ClientToServerSignifiers.EndingTheGame + "," + "Opponent disconnected", recConnectionID);
+                            ProcessRecievedMsg(ClientToServerSignifiers.EndGame + "," + "Opponent disconnected", recConnectionID);
                         RemoveClientFromGameRoom(gameRoom, recConnectionID);
                     }
                 }
@@ -170,23 +170,23 @@ public class NetworkedServer : MonoBehaviour
             }
         }
         //Tic-Tac-Toe Gameplay
-        else if(signifier == ClientToServerSignifiers.SelectedTicTacToeSquare)
+        else if(signifier == ClientToServerSignifiers.TTTSquareChosen)
         {
-            string newMsg = ServerToClientSignifiers.OpponentChoseASquare + "," + csv[1];
+            string newMsg = ServerToClientSignifiers.OpponentAction + "," + csv[1];
             GameRoom gameRoom = GetGameRoomFromClientID(id);
             SendMessageToOthers(gameRoom, id, newMsg);
             gameRoom.savedSquareChoices.Add(csv[1]);
         }
         //Game Ended
-        else if(signifier == ClientToServerSignifiers.EndingTheGame)
+        else if(signifier == ClientToServerSignifiers.EndGame)
         {
-            string newMsg = ServerToClientSignifiers.GameIsOver + "," + csv[1];
+            string newMsg = ServerToClientSignifiers.GameOver + "," + csv[1];
             GameRoom gr = GetGameRoomFromClientID(id);
             SendMessageToOthers(gr, id, newMsg);
             gr.gameHasEnded = true;
         }
         //Player Messaging
-        else if(signifier == ClientToServerSignifiers.ChatLogMessage)
+        else if(signifier == ClientToServerSignifiers.ChatMessage)
         {
             string newMsg = ServerToClientSignifiers.ChatLogMessage + ","  + csv[1];
             GameRoom gameRoom = GetGameRoomFromClientIDIncludeObservers(id);
@@ -211,7 +211,7 @@ public class NetworkedServer : MonoBehaviour
                 EnterGameRoomAsObserver(specifiedRoom, id);
         }
         //Player leaving room
-        else if(signifier == ClientToServerSignifiers.LeaveTheRoom)
+        else if(signifier == ClientToServerSignifiers.LeavingRoom)
         {
             if(id == playerWaitingForMatchWithId)
             {
@@ -376,15 +376,15 @@ public static class ClientToServerSignifiers
     public const int CreateAccount = 1;
     public const int Login = 2;
     public const int JoinGameRoomQueue = 3;
-    public const int SelectedTicTacToeSquare = 4;
+    public const int TTTSquareChosen = 4;
 
-    public const int ChatLogMessage = 8;
+    public const int ChatMessage = 8;
 
     public const int JoinAnyRoomAsObserver = 9;
     public const int JoinSpecificRoomAsObserver = 10;
 
-    public const int EndingTheGame = 11;
-    public const int LeaveTheRoom = 12;
+    public const int EndGame = 11;
+    public const int LeavingRoom = 12;
 
     public const int RequestTurnData = 14;
 }
@@ -400,13 +400,13 @@ public static class ServerToClientSignifiers
     public const int GameStart = 5;
 
     public const int ChosenAsPlayerOne = 6;
-    public const int OpponentChoseASquare = 7;
+    public const int OpponentAction = 7;
 
     public const int ChatLogMessage = 11;
 
     public const int EnteredGameRoomAsObserver = 12;
 
-    public const int GameIsOver = 13;
+    public const int GameOver = 13;
     public const int TurnData = 14;
 }
 
