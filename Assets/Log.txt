@@ -1,26 +1,19 @@
-20211205 193530: Start connection 1
-20211205 193534: b1:Account creation succeed from connection 1
-20211205 193535: b1:player join in game room from connection 1
-20211205 193603: Disconnection 1
-20211205 194424: Start connection 1
-20211205 194428: a1:Account created from connection 1
-20211205 194432: Start connection 2
-20211205 194435: a2:Account created from connection 2
-20211205 194502: a2 joined, connection ID: 2
-20211205 194508: a1 joined, connection ID: 1
-20211205 194605: Start connection 3
-20211205 194608: a3:Account created from connection 3
-20211205 194611: a3 joined, connection ID: 3
-20211205 194611: Game started, current players: ,2:a2,1:a1,3:a3
-20211205 194623: Disconnection 3
-20211205 194625: Disconnection 1
-20211205 194626: Disconnection 2
-20211205 194838: Start connection 1
-20211205 194843: a1:Account created from connection 1
-20211205 194847: a1 joined, connection ID: 1
-20211205 194855: Disconnection 1
-20211205 195949: Start connection 1
-20211205 200034: Start connection 1
-20211205 200038: a3:Account created from connection 1
-20211205 200042: a3 joined, connection ID: 1
-20211205 200049: Disconnection 1
+20211206 131844: Start connection 1
+20211206 131849: Start connection 2
+20211206 131852: Start connection 3
+20211206 131855: Start connection 4
+20211206 131909: p1:Account created from connection 1
+20211206 131918: p2:Account created from connection 2
+20211206 131923: p3:Account created from connection 3
+20211206 131928: p4:Account created from connection 4
+20211206 131952: p1 joined, connection ID: 1
+20211206 131954: p2 joined, connection ID: 2
+20211206 131955: p4 joined, connection ID: 4
+20211206 131955: Game started, current players: ,1:p1,2:p2,4:p4
+20211206 131957: p3 joined as an observer, connection ID: 3
+20211206 132034: p1:hello world to ID 2
+20211206 132043: p3 joined as an observer, connection ID: 3
+20211206 133108: Disconnection 4
+20211206 133109: Disconnection 3
+20211206 133109: Disconnection 2
+20211206 133110: Disconnection 1
