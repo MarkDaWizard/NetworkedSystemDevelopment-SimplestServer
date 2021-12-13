@@ -1,10 +1,14 @@
-using System.Collections;
+//Phu Pham
+//101250748
+//
+//T163 - Game Programming
+//GAME3110
+
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
-using System.IO;
-using UnityEngine.UI;
 
 public class NetworkedServer : MonoBehaviour
 {
