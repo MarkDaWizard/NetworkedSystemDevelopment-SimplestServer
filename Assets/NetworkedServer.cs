@@ -74,13 +74,13 @@ public class NetworkedServer : MonoBehaviour
                     playerWaitingForMatchWithId = -1;
                 else
                 {
-                    GameRoom gameRoom = GetGameRoomFromClientIDIncludeObservers(recConnectionID);
+                    GameRoom gameRoom = GetRoomFromID(recConnectionID);
                     if (gameRoom != null)
                     {
                         //Check if a player disconnected
                         if ((gameRoom.playerID1 == recConnectionID || gameRoom.playerID2 == recConnectionID) && gameRoom.gameHasEnded == false)
                             ProcessRecievedMsg(ClientToServerSignifiers.EndGame + "," + "Opponent disconnected", recConnectionID);
-                        RemoveClientFromGameRoom(gameRoom, recConnectionID);
+                        RemovePlayerFromRoom(gameRoom, recConnectionID);
                     }
                 }
                 break;
@@ -106,9 +106,9 @@ public class NetworkedServer : MonoBehaviour
         //Account creation
         if (signifier == ClientToServerSignifiers.CreateAccount) //A player is creating their account
         {
-            string n = csv[1];
-            string p = csv[2];
-            bool nameIsInUse = searchAccountsByName(n, out PlayerAccount temp);
+            string name = csv[1];
+            string pass = csv[2];
+            bool nameIsInUse = searchAccountsByName(name, out PlayerAccount temp);
 
             if(nameIsInUse)
             {
@@ -116,7 +116,7 @@ public class NetworkedServer : MonoBehaviour
             }
             else
             {
-                SaveNewUser(new PlayerAccount(n, p));
+                SaveNewUser(new PlayerAccount(name, pass));
                 SendMessageToClient(ServerToClientSignifiers.AccountCreated + ", Account created successfully!", id);
             }
         }
@@ -177,7 +177,7 @@ public class NetworkedServer : MonoBehaviour
         else if(signifier == ClientToServerSignifiers.TTTSquareChosen)
         {
             string newMsg = ServerToClientSignifiers.OpponentAction + "," + csv[1];
-            GameRoom gameRoom = GetGameRoomFromClientID(id);
+            GameRoom gameRoom = GetRoomFromPlayerID(id);
             SendMessageToOthers(gameRoom, id, newMsg);
             gameRoom.savedSquareChoices.Add(csv[1]);
         }
@@ -185,7 +185,7 @@ public class NetworkedServer : MonoBehaviour
         else if(signifier == ClientToServerSignifiers.EndGame)
         {
             string newMsg = ServerToClientSignifiers.GameOver + "," + csv[1];
-            GameRoom gr = GetGameRoomFromClientID(id);
+            GameRoom gr = GetRoomFromPlayerID(id);
             SendMessageToOthers(gr, id, newMsg);
             gr.gameHasEnded = true;
         }
@@ -193,7 +193,7 @@ public class NetworkedServer : MonoBehaviour
         else if(signifier == ClientToServerSignifiers.ChatMessage)
         {
             string newMsg = ServerToClientSignifiers.ChatLogMessage + ","  + csv[1];
-            GameRoom gameRoom = GetGameRoomFromClientIDIncludeObservers(id);
+            GameRoom gameRoom = GetRoomFromID(id);
             SendMessageToOthers(gameRoom, id, newMsg);
         }
         //Observer join random room
@@ -201,7 +201,7 @@ public class NetworkedServer : MonoBehaviour
         {
             if(gameRooms.Count > 0)
             { 
-                EnterGameRoomAsObserver(gameRooms.First.Value, id);
+                JoinAsObserver(gameRooms.First.Value, id);
             }
         }
         //Observer join specific room
@@ -212,7 +212,7 @@ public class NetworkedServer : MonoBehaviour
             GameRoom specifiedRoom = GetRoomFromRoomID(requestedRoomNumber);
 
             if(specifiedRoom !=null)
-                EnterGameRoomAsObserver(specifiedRoom, id);
+                JoinAsObserver(specifiedRoom, id);
         }
         //Player leaving room
         else if(signifier == ClientToServerSignifiers.LeavingRoom)
@@ -223,10 +223,10 @@ public class NetworkedServer : MonoBehaviour
                 return;
             }
 
-            GameRoom gameRoom = GetGameRoomFromClientIDIncludeObservers(id);
+            GameRoom gameRoom = GetRoomFromID(id);
 
             if(gameRoom != null)
-                RemoveClientFromGameRoom(gameRoom, id);
+                RemovePlayerFromRoom(gameRoom, id);
         }
         //Replay request
         else if(signifier == ClientToServerSignifiers.RequestTurnData)
@@ -290,28 +290,50 @@ public class NetworkedServer : MonoBehaviour
     }
 
 
+    //Send a message to all but sender
+    void SendMessageToOthers(GameRoom gameRoom, int fromID, string msg)
+    {
+        foreach (int id in gameRoom.observerIDs)
+        {
+            if (id != fromID)
+                SendMessageToClient(msg, id);
+        }
+    }
+
+
+    //Enter a room as observer
+    void JoinAsObserver(GameRoom gameRoom, int playerId)
+    {
+        gameRoom.observerIDs.Add(playerId);
+        string msg = ServerToClientSignifiers.EnteredGameRoomAsObserver + "," + gameRoom.gameRoomID;
+        foreach (string turnData in gameRoom.savedSquareChoices)
+        {
+            msg += "," + turnData;
+        }
+        SendMessageToClient(msg, playerId);
+    }
 
 
     //Find a player IDs from all game rooms
-    private GameRoom GetGameRoomFromClientID(int id)
+    private GameRoom GetRoomFromPlayerID(int id)
     {
-        foreach(GameRoom gr in gameRooms)
+        foreach(GameRoom gameRoom in gameRooms)
         {
-            if(gr.playerID1 == id || gr.playerID2 == id)
-                return gr;
+            if(gameRoom.playerID1 == id || gameRoom.playerID2 == id)
+                return gameRoom;
         }
         return null;
     }
 
     //Check all IDs from a room
-    private GameRoom GetGameRoomFromClientIDIncludeObservers(int id)
+    private GameRoom GetRoomFromID(int id)
     {
-        foreach (GameRoom gr in gameRooms)
+        foreach (GameRoom gameRoom in gameRooms)
         {
-            foreach (int observerId in gr.observerIDs)
+            foreach (int observerId in gameRoom.observerIDs)
             {
                 if (observerId == id)
-                    return gr;
+                    return gameRoom;
             }
 
         }
@@ -321,40 +343,17 @@ public class NetworkedServer : MonoBehaviour
     //Find a room from an ID
     private GameRoom GetRoomFromRoomID(int id)
     {
-        foreach (GameRoom gr in gameRooms)
+        foreach (GameRoom gameRoom in gameRooms)
         {
-            if (gr.gameRoomID == id)
-                return gr;
+            if (gameRoom.gameRoomID == id)
+                return gameRoom;
         }
         return null;
     }
 
 
-    //Send a message to all but sender
-    void SendMessageToOthers(GameRoom gr, int fromID, string msg)
-    {
-        foreach(int id in gr.observerIDs)
-        {
-            if(id != fromID)
-                 SendMessageToClient(msg, id);
-        }
-    }
-
-
-    //Enter a room as observer
-    void EnterGameRoomAsObserver(GameRoom gr, int playerId)
-    {
-        gr.observerIDs.Add(playerId);
-        string msg = ServerToClientSignifiers.EnteredGameRoomAsObserver + "," + gr.gameRoomID;
-        foreach(string turnData in gr.savedSquareChoices)
-        {
-            msg += "," + turnData;
-        }
-        SendMessageToClient(msg, playerId);
-    }
-
     //Remove a player from a room
-    void RemoveClientFromGameRoom(GameRoom gr, int id)
+    void RemovePlayerFromRoom(GameRoom gr, int id)
     {
         int index = -1;
         for(int i = 0; i < gr.observerIDs.Count; i++)
@@ -381,15 +380,11 @@ public static class ClientToServerSignifiers
     public const int Login = 2;
     public const int JoinGameRoomQueue = 3;
     public const int TTTSquareChosen = 4;
-
     public const int ChatMessage = 8;
-
     public const int JoinAnyRoomAsObserver = 9;
     public const int JoinSpecificRoomAsObserver = 10;
-
     public const int EndGame = 11;
     public const int LeavingRoom = 12;
-
     public const int RequestTurnData = 14;
 }
 
@@ -397,23 +392,16 @@ public static class ServerToClientSignifiers
 {
     public const int LoginComplete = 1;
     public const int LoginFailed = 2;
-
     public const int AccountCreated = 3;
     public const int AccountCreationFailed = 4;
-
     public const int GameStart = 5;
-
     public const int ChosenAsPlayerOne = 6;
     public const int OpponentAction = 7;
-
     public const int ChatLogMessage = 11;
-
     public const int EnteredGameRoomAsObserver = 12;
-
     public const int GameOver = 13;
     public const int TurnData = 14;
 }
-
 
 public class PlayerAccount
 {
